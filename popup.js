@@ -1,64 +1,54 @@
 scaleToggle = document.querySelector("input[name=scale_toggle]")
+
 scaleAmount = document.querySelector("input[name=scale_amount]")
-offsetAmount = document.querySelector("input[name=offset_amount]")
 scaleLabel = document.querySelector(".scale_amount_value")
+
+offsetAmount = document.querySelector("input[name=offset_amount]")
 offsetLabel = document.querySelector(".offset_amount_value")
 
-rescaleActive = false;
+function updateState(state) {
+  scaleToggle.checked = state.active;
 
-function getCss() {
-  var scale = (rescaleActive ? scaleAmount.value : 1.0);
-  var offset = (rescaleActive ? offsetAmount.value : 0);
-  return [
-    "html {",
-    "  transform: scaleX(" + scale + ") translateX(" + offset + "px) !important;",
-    "}"
-  ].join("\n");
-}
+  scaleAmount.value = state.scale;
+  scaleLabel.innerHTML = state.scale;
 
-function updateTab(tabId) {
-  chrome.tabs.insertCSS(tabId, {
-    "code": getCss()
-  }, function() {});
-}
-
-function updateOpenTabs() {
-  chrome.tabs.query({}, function(tabs) {
-    for (var i = 0; i < tabs.length; ++i) {
-      var tab = tabs[i];
-      updateTab(tab.id);
-    }
-  });
+  offsetAmount.value = state.offset;
+  offsetLabel.innerHTML = state.offset;
 }
 
 function setActive(isActive) {
-  rescaleActive = isActive;
-  updateOpenTabs()
-  if (rescaleActive) {
-    // start listening to new tabs and new urls
-  } else {
-    // stop listening to tabs
-  }
+  chrome.runtime.sendMessage({ action: "setActive", param: isActive }, function(state) {
+    updateState(state);
+  })
 }
 
-function updateScaleAmount() {
-  updateOpenTabs();
-  scaleLabel.innerHTML = scaleAmount.value;
+function setScaleAmount(scale) {
+  chrome.runtime.sendMessage({ action: "setScale", param: scale }, function(state) {
+    updateState(state);
+  })
 }
 
-function updateOffsetAmount() {
-  updateOpenTabs();
-  offsetLabel.innerHTML = offsetAmount.value;
+function setOffsetAmount(offset) {
+  chrome.runtime.sendMessage({ action: "setOffset", param: offset }, function(state) {
+    updateState(state);
+  })
 }
 
-scaleToggle.addEventListener("change", function(ev) {
-  setActive(scaleToggle.checked);
-});
+function init() {
+  scaleToggle.addEventListener("change", function(ev) {
+    setActive(scaleToggle.checked);
+  });
 
-scaleAmount.addEventListener("change", function(ev) {
-  updateScaleAmount();
-});
+  scaleAmount.addEventListener("input", function(ev) {
+    setScaleAmount(scaleAmount.value);
+  });
 
-offsetAmount.addEventListener("change", function(ev) {
-  updateOffsetAmount();
+  offsetAmount.addEventListener("input", function(ev) {
+    setOffsetAmount(offsetAmount.value);
+  });
+}
+
+chrome.runtime.sendMessage({ action: "getState" }, function(state) {
+  updateState(state);
+  init();
 });
