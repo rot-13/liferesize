@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
 
-  "name": "LifeSize Transform",
+  "name": "LifeResize",
   "description": "Rescale the screen to fit LifeSize",
   "version": "1.0",
 
